@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { TICK_MS } from "./config";
 import { resolve, startMatch, tick } from "./match";
-import type { Action, Player } from "./types";
+import type { Action, Side, Team } from "./types";
 
-export function useMatch(player: Player) {
-  const [state, setState] = useState(() => startMatch(player));
+export function useMatch(sides: Record<Team, Side>) {
+  const [state, setState] = useState(() => startMatch(sides));
 
   useEffect(() => {
     if (!state.running) return;

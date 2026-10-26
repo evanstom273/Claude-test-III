@@ -1,25 +1,24 @@
 import { useState } from "react";
-import { PLAYERS } from "./game/config";
-import type { Position } from "./game/types";
+import type { Side, Team } from "./game/types";
 import Setup from "./components/Setup";
 import MatchScreen from "./components/MatchScreen";
 
 export default function App() {
-  const [position, setPosition] = useState<Position | null>(null);
+  const [sides, setSides] = useState<Record<Team, Side> | null>(null);
   const [matchKey, setMatchKey] = useState(0);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-3xl px-4 py-6">
-        {position ? (
+        {sides ? (
           <MatchScreen
             key={matchKey}
-            player={PLAYERS[position]}
+            sides={sides}
             onReplay={() => setMatchKey((k) => k + 1)}
-            onQuit={() => setPosition(null)}
+            onQuit={() => setSides(null)}
           />
         ) : (
-          <Setup onPick={setPosition} />
+          <Setup onStart={setSides} />
         )}
       </div>
     </div>
