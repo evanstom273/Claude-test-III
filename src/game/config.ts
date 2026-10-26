@@ -1,17 +1,25 @@
 // Every tunable number lives here. All of these are placeholders to be argued over.
-import type { DiveDirection, GoalZone, PitchZone, Player, Position } from "./types";
+import type { DiveDirection, GoalZone, Opener, PitchZone, Player, Position } from "./types";
 
-/** Match clock. */
+/** Match clock: 45 game minutes take 30 real seconds. */
 export const MINUTES_PER_TICK = 1;
 export const MATCH_LENGTH = 90;
-export const TICK_MS = 350;
+export const TICK_MS = 30_000 / 45;
 
-/** Chance per tick that the player gets pulled into the action, by position. */
-export const INVOLVEMENT_CHANCE: Record<Position, number> = {
-  GK: 0.04,
-  DEF: 0.08,
-  MID: 0.1,
-  FWD: 0.07,
+/** Game minutes between involvements, picked at random in this range each time. */
+export const INVOLVEMENT_GAP: Record<Position, { min: number; max: number }> = {
+  GK: { min: 10, max: 20 },
+  DEF: { min: 5, max: 10 },
+  MID: { min: 5, max: 10 },
+  FWD: { min: 5, max: 10 },
+};
+
+/** How each position tends to get pulled in. Weights, not percentages. */
+export const OPENERS: Record<Position, Partial<Record<Opener, number>>> = {
+  GK: { shotAtYou: 45, crossIntoBox: 30, oneOnOneAgainst: 25 },
+  DEF: { toFeet: 30, runAtYou: 35, passThrough: 35 },
+  MID: { toFeet: 40, toFeetAdvanced: 15, runAtYou: 20, passThrough: 25 },
+  FWD: { toFeet: 40, toFeetAdvanced: 10, throughOnGoal: 15, crossToYou: 25, runAtYou: 10 },
 };
 
 /** Chance per tick that something worth a commentary line happens without you. */
@@ -27,9 +35,37 @@ export function statModifier(stat: number): number {
 /** Target numbers on 2d6 (roll + modifiers must meet or beat these). */
 export const TARGETS = {
   pass: 6,
+  oneTwo: 7,
+  throughBall: 8,
+  longBall: 8,
   dribble: 7,
+  roundKeeper: 8,
+  control: 6,
   tackle: 8,
+  jockey: 6,
+  intercept: 7,
   save: 8,
+  claim: 8,
+  punch: 6,
+  rushOut: 8,
+  throwShort: 5,
+  kickLong: 8,
+};
+
+/** What happens after things you set up but don't finish yourself. */
+export const CHANCES = {
+  /** A completed short pass comes straight back to you, further up the pitch. */
+  passReturned: 0.35,
+  /** Teammate scores from your through ball. */
+  throughBallFinished: 0.4,
+  /** Teammate scores from your square ball in the box. */
+  squareBallFinished: 0.45,
+  /** Your long ball or kick sets up an attack that ends in a goal. */
+  longBallFinished: 0.2,
+  /** Opposition score after getting past you (outfield only; your keeper is simulated). */
+  opponentBreakScores: 0.3,
+  /** A successful save is held rather than parried. */
+  saveHeld: 0.4,
 };
 
 /** Shooting from further out is harder. */
@@ -37,6 +73,8 @@ export const SHOT_DISTANCE_MODIFIER: Partial<Record<PitchZone, number>> = {
   finalThird: -2,
   box: 1,
 };
+
+export const ONE_ON_ONE_MODIFIER = 2;
 
 /**
  * One roll per shot. Below `onTarget` misses the goal; at or above `beatsKeeper` scores;
@@ -50,6 +88,9 @@ export const SHOT_ZONES: Record<GoalZone, { label: string; onTarget: number; bea
   bottomCentre: { label: "Bottom centre", onTarget: 4, beatsKeeper: 11 },
   bottomRight: { label: "Bottom right", onTarget: 7, beatsKeeper: 8 },
 };
+
+/** Headers use the same miss / saved / goal split as shots, without picking a spot. */
+export const HEADER = { onTarget: 6, beatsKeeper: 9 };
 
 /** Keeper: guessing the right side helps, guessing wrong hurts. */
 export const DIVE_MODIFIER = { correct: 3, wrong: -3 };
@@ -78,13 +119,6 @@ export const STARTING_ZONE: Record<Exclude<Position, "GK">, PitchZone> = {
   DEF: "ownHalf",
   MID: "midfield",
   FWD: "finalThird",
-};
-
-/** Off-the-ball involvements: how often an outfielder is defending rather than on the ball. */
-export const DEFENDING_SHARE: Record<Exclude<Position, "GK">, number> = {
-  DEF: 0.6,
-  MID: 0.4,
-  FWD: 0.15,
 };
 
 export const POSITION_LABELS: Record<Position, string> = {

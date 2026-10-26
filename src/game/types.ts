@@ -43,18 +43,62 @@ export interface CheckResult {
 
 /** A moment where the clock stops and the player has to decide something. */
 export type Situation =
+  // Outfield, attacking
   | { kind: "onBall"; zone: PitchZone }
-  | { kind: "pickShot"; zone: PitchZone }
-  | { kind: "defending" }
-  | { kind: "facingShot"; shotZone: GoalZone };
+  | { kind: "pickShot"; zone: PitchZone; extra: Modifier[] }
+  | { kind: "oneOnOne" }
+  | { kind: "crossIncoming" }
+  // Outfield, defending
+  | { kind: "runAtYou" }
+  | { kind: "passThrough" }
+  // Goalkeeper
+  | { kind: "facingShot"; shotZone: GoalZone }
+  | { kind: "crossIntoBox" }
+  | { kind: "oneOnOneAgainst" }
+  | { kind: "ballInHands" };
+
+/** How an involvement starts. Weighted per position in config. */
+export type Opener =
+  | "toFeet"
+  | "toFeetAdvanced"
+  | "throughOnGoal"
+  | "crossToYou"
+  | "runAtYou"
+  | "passThrough"
+  | "shotAtYou"
+  | "crossIntoBox"
+  | "oneOnOneAgainst";
 
 export type Action =
   | { kind: "pass" }
+  | { kind: "oneTwo" }
   | { kind: "dribble" }
+  | { kind: "throughBall" }
+  | { kind: "longBall" }
   | { kind: "shoot" }
   | { kind: "shootAt"; target: GoalZone }
+  | { kind: "roundKeeper" }
+  | { kind: "header" }
+  | { kind: "control" }
   | { kind: "tackle" }
-  | { kind: "dive"; direction: DiveDirection };
+  | { kind: "jockey" }
+  | { kind: "intercept" }
+  | { kind: "holdPosition" }
+  | { kind: "dive"; direction: DiveDirection }
+  | { kind: "claim" }
+  | { kind: "punch" }
+  | { kind: "stayOnLine" }
+  | { kind: "rushOut" }
+  | { kind: "standTall" }
+  | { kind: "throwShort" }
+  | { kind: "kickLong" };
+
+export interface Choice {
+  action: Action;
+  label: string;
+  /** Target number on 2d6, if this choice involves a roll. */
+  target?: number;
+}
 
 export interface LogEntry {
   id: number;
@@ -70,6 +114,8 @@ export interface MatchState {
   score: Record<Team, number>;
   log: LogEntry[];
   situation: Situation | null;
+  /** Game minute at which the player is next pulled into the action. */
+  nextInvolvement: number;
   running: boolean;
   finished: boolean;
   stats: { rolls: number; successes: number };
