@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "football-dice",
+  "compatibility_date": "2026-10-01",
+  // Static assets only for now: Vite builds into dist/ and Workers serves it.
+  // Add a "main" entry here later if the game ever needs server-side code.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
