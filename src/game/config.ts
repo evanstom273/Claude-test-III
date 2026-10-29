@@ -1,38 +1,8 @@
 // Every tunable number lives here. All of these are placeholders to be argued over.
-import type {
-  BallAction,
-  DiveDirection,
-  FormationId,
-  GoalZone,
-  Lane,
-  PositionCode,
-  RoleId,
-  Stat,
-  StyleId,
-  Zone,
-} from "./types";
+import type { BallAction, FormationId, Lane, PositionCode, RoleId, Stat, StyleId, Zone } from "./types";
 
 // ---------------------------------------------------------------------------
-// Clock
-// ---------------------------------------------------------------------------
-
-/** 45 game minutes take 30 real seconds. */
-export const MINUTES_PER_TICK = 1;
-export const MATCH_LENGTH = 90;
-export const TICK_MS = 30_000 / 45;
-/** How many times the ball changes hands or moves on in a game minute. */
-export const ACTIONS_PER_TICK = 2;
-
-/**
- * The ball is more likely to find you the longer you've gone without it.
- * After this many minutes uninvolved, passes start favouring you, and keep favouring you more.
- * Straight after you've been involved, play tends to go elsewhere for a bit.
- * This only changes where the ball goes, never the dice.
- */
-export const INVOLVEMENT_NUDGE = { afterMinutes: 5, weightPerMinute: 0.6, cooldownFrom: 2, cooldownTo: 4, cooldownWeight: 0.35 };
-
-// ---------------------------------------------------------------------------
-// Stats and dice
+// Stats
 // ---------------------------------------------------------------------------
 
 export const STATS: Stat[] = [
@@ -61,113 +31,12 @@ export const STAT_LABELS: Record<Stat, string> = {
   passing: "Passing",
 };
 
-/** Each half star of difference between the two players is worth this much on the dice. */
-export const MODIFIER_PER_HALF_STAR = 1;
-
 /** Fatigue: after this minute (shifted by stamina and style), players lose half a star per interval. */
 export const FATIGUE = {
   startsAt: 50,
   minutesPerStaminaStar: 8,
   minutesPerHalfStarLost: 12,
   maxStarsLost: 1.5,
-};
-
-/**
- * Target numbers, always from the attacker's side: attacker rolls 2d6 + (their stars − defender's stars).
- * When you're the one defending, the same roll is shown from your side.
- */
-export const TARGETS = {
-  shortPass: { intercept: 7, hold: 5 },
-  oneTwo: { intercept: 7, hold: 7 },
-  throughBall: { intercept: 7, hold: 9 },
-  longBall: 8,
-  cross: 7,
-  dribble: { tackle: 7, jockey: 5 },
-  roundKeeper: 8,
-  headerDuel: 7,
-  control: 7,
-  keeperClaim: 6,
-  keeperPunch: 5,
-};
-
-/** Shots from further out are harder. Shooting isn't allowed from deeper than the final third. */
-export const SHOT_DISTANCE_MODIFIER: Partial<Record<Zone, number>> = {
-  attack: -2,
-  box: 1,
-};
-
-/**
- * One roll per shot. Below `onTarget` misses; at or above `beatsKeeper` scores; in between is saved.
- * Corners are hard to hit but go in if you do.
- */
-export const SHOT_ZONES: Record<GoalZone, { label: string; onTarget: number; beatsKeeper: number }> = {
-  topLeft: { label: "Top left", onTarget: 9, beatsKeeper: 10 },
-  topCentre: { label: "Top centre", onTarget: 6, beatsKeeper: 11 },
-  topRight: { label: "Top right", onTarget: 9, beatsKeeper: 10 },
-  bottomLeft: { label: "Bottom left", onTarget: 7, beatsKeeper: 10 },
-  bottomCentre: { label: "Bottom centre", onTarget: 4, beatsKeeper: 12 },
-  bottomRight: { label: "Bottom right", onTarget: 7, beatsKeeper: 10 },
-};
-
-/** How AI shooters pick their spot. */
-export const AI_SHOT_ZONE_WEIGHTS: Record<GoalZone, number> = {
-  topLeft: 1,
-  topCentre: 1,
-  topRight: 1,
-  bottomLeft: 2,
-  bottomCentre: 1,
-  bottomRight: 2,
-};
-
-export const HEADER = { onTarget: 6, beatsKeeper: 9 };
-
-/** Keeper guessing the right way makes the shot harder; the wrong way makes it easier. */
-export const DIVE_MODIFIER = { right: -2, wrong: 2 };
-
-/** One-on-ones: rushing out helps against a shot but gets you rounded; standing tall is the reverse. */
-export const ONE_ON_ONE = {
-  rushOut: { shoot: -2, round: 2 },
-  standTall: { shoot: 0, round: -2 },
-};
-
-export function goalZoneSide(zone: GoalZone): DiveDirection {
-  if (zone.endsWith("Left")) return "left";
-  if (zone.endsWith("Right")) return "right";
-  return "centre";
-}
-
-// ---------------------------------------------------------------------------
-// The pitch
-// ---------------------------------------------------------------------------
-
-export const ZONE_LABELS: Record<Zone, string> = {
-  defence: "your own third",
-  midfield: "midfield",
-  attack: "the final third",
-  box: "the box",
-};
-
-export const NEXT_ZONE: Record<Zone, Zone> = {
-  defence: "midfield",
-  midfield: "attack",
-  attack: "box",
-  box: "box",
-};
-
-/** Where the ball is for the defending side, given where it is for the attacking side. */
-export const MIRROR_ZONE: Record<Zone, Zone> = {
-  defence: "attack",
-  midfield: "midfield",
-  attack: "defence",
-  box: "defence",
-};
-
-/** What the side on the ball tends to try, by zone, before role and style adjust it. */
-export const BASE_ACTIONS: Record<Zone, Partial<Record<BallAction, number>>> = {
-  defence: { shortPass: 6, longBall: 2, dribble: 1 },
-  midfield: { shortPass: 5, oneTwo: 1, throughBall: 1.5, longBall: 1, dribble: 2 },
-  attack: { shortPass: 3, oneTwo: 1, throughBall: 2, cross: 3, dribble: 2, shoot: 1.5 },
-  box: { shoot: 5, shortPass: 2, dribble: 1.5 },
 };
 
 // ---------------------------------------------------------------------------

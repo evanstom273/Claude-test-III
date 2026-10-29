@@ -3,13 +3,14 @@
 /** World pixels per metre. Art is authored at this scale (1 SVG unit = 1 world pixel). */
 export const PX = 11;
 
-export const PITCH_W = 68;
+/** The pitch runs left to right: length along x, width along y. Your side attacks to the right. */
 export const PITCH_L = 105;
+export const PITCH_W = 68;
 /** Grass, boards and stands around the pitch, in world pixels. */
-export const MARGIN = 84;
+export const MARGIN = 96;
 
-export const WORLD_W = PITCH_W * PX + MARGIN * 2;
-export const WORLD_H = PITCH_L * PX + MARGIN * 2;
+export const WORLD_W = PITCH_L * PX + MARGIN * 2;
+export const WORLD_H = PITCH_W * PX + MARGIN * 2;
 
 export const GOAL_WIDTH = 7.32;
 export const GOAL_HEIGHT = 2.44;
@@ -52,9 +53,11 @@ export const TACKLE_RANGE = 2.3;
 export const BEATEN_TIME = 0.75;
 /** How often the AI rethinks, in seconds. */
 export const AI_REACTION = 0.32;
+/** After receiving, an unpressured AI player takes a touch and looks up for this long (plus a bit). */
+export const FIRST_TOUCH = 0.45;
 
 /** Passing: arrival speed, and how far before passes go in the air. */
-export const PASS_ARRIVAL_SPEED = 5;
+export const PASS_ARRIVAL_SPEED = 9;
 export const LOFT_DISTANCE = 28;
 /** Aim error in radians: base minus this per passing/finishing star. */
 export const PASS_ERROR = { base: 0.11, perStar: 0.017 };

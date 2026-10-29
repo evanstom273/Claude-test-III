@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FORMATIONS, POSITIONS, ROLES, STYLES } from "../game/config";
 import { generateSide, generateStats, namePool } from "../game/squad";
 import type { FormationId, RoleId, Side, StyleId, Team } from "../game/types";
+import type { ControlMode } from "../pitch/sim";
 import PlayerCard from "./PlayerCard";
 
 const pill = (on: boolean) =>
@@ -13,7 +14,8 @@ function randomOf<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-export default function Setup({ onStart, onBack }: { onStart: (sides: Record<Team, Side>) => void; onBack: () => void }) {
+export default function Setup({ onStart }: { onStart: (sides: Record<Team, Side>, mode: ControlMode) => void }) {
+  const [mode, setMode] = useState<ControlMode>("player");
   const [formation, setFormation] = useState<FormationId>("4-3-3");
   const [style, setStyle] = useState<StyleId>("balanced");
   const [slot, setSlot] = useState(10);
@@ -42,18 +44,30 @@ export default function Setup({ onStart, onBack }: { onStart: (sides: Record<Tea
       names,
       Math.random,
     );
-    onStart({ us, them });
+    onStart({ us, them }, mode);
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <button onClick={onBack} className="mb-2 text-sm text-slate-400 hover:text-slate-200">
-          ← Back
-        </button>
-        <h1 className="text-3xl font-bold">Set up</h1>
+        <h1 className="text-3xl font-bold">Football Dice</h1>
         <p className="mt-1 text-slate-400">Pick your team's shape and style, then who you are in it.</p>
       </div>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Control</h2>
+        <div className="flex flex-wrap gap-2">
+          <button className={pill(mode === "player")} onClick={() => setMode("player")}>
+            Just my player
+          </button>
+          <button className={pill(mode === "team")} onClick={() => setMode("team")}>
+            Whole team
+          </button>
+        </div>
+        <p className="mt-2 text-sm text-slate-400">
+          {mode === "player" ? "Player career: you're one footballer and your teammates play themselves." : "Control whoever has the ball, like FIFA."}
+        </p>
+      </section>
 
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Formation</h2>
