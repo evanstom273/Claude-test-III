@@ -1,6 +1,7 @@
 import { BASE_STARS, FORMATIONS, OUTFIELD_KEEPING, POSITIONS, ROLES, STATS, SURNAMES } from "./config";
-import type { Rng } from "./dice";
 import type { FormationId, Footballer, PositionCode, RoleId, Side, Stats, StyleId, Team } from "./types";
+
+type Rng = () => number;
 
 function halfStars(value: number): number {
   return Math.min(5, Math.max(0, Math.round(value * 2) / 2));

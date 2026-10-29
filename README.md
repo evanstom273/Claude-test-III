@@ -1,30 +1,19 @@
 # Football Dice
 
-A football game where you play as one player in a fully simulated match. Every player on the pitch, on both sides, has the same ten stats and goes through the same dice. When the play reaches you, the clock stops and you make the call.
+A top-down football game. The pitch runs left to right, the camera follows the ball, and players are shaded tokens. Play as just your own player (player career) or control the whole team, switching to whoever's on the ball.
 
-## How the dice work
-
-- Ten stats, each 0–5 stars in half steps: speed, strength, stamina, composure, finishing, aerial, keeping, defending, dribbling, passing.
-- Every contest is your stars against theirs. Each half star of difference is +1 or −1 on 2d6.
-- Some rolls use the average of two stats (dribbling uses dribbling and speed).
-- Double one always fails, double six always succeeds.
-- The attacker rolls. When you're defending you see the same roll from your side, with identical odds.
+Every player on both sides has ten stats rated 0–5 stars: speed, strength, stamina, composure, finishing, aerial, keeping, defending, dribbling and passing. They set how fast players run, how accurate passes and shots are, and who wins duels. Tackles, interceptions and saves still use the original rule underneath: each half star of difference is worth 1 on a hidden 2d6, with double one always failing and double six always succeeding.
 
 Early prototype. Every number is a placeholder.
 
-## Prototypes
+## Controls
 
-The home screen offers three ways of playing your moments, all on the same squads, stars, formations and styles:
-
-- **Grid tactics:** a top-down pitch of squares. Each turn (30 seconds) you move up to three of your players one square; the AI moves the rest, then the ball is passed, tackled for or shot. Contests still use stars and dice.
-- **Mini-games:** the simulated match, but your rolls come from stopping a timing bar. Random timing gives exactly the dice odds.
-- **Live moments:** the simulated match, but when you're on the ball going forward you play a short live passage in Phaser: hold to run, flick to pass or shoot. Tackles, interceptions and shots use the same star odds.
-
-The original dice version is still there to compare against.
+- **Phone:** left thumb anywhere on the left half to move; Pass, hold-to-power Shoot, Tackle, and Call (player mode) or Switch (team mode) on the right.
+- **Keyboard:** arrows or WASD to move, J or Space pass, hold K shoot, L tackle, Shift switch, C call.
 
 ## Stack
 
-React, Vite, TypeScript and Tailwind CSS, deployed to Cloudflare Workers as static assets. Phaser runs the live moments.
+React, Vite, TypeScript and Tailwind CSS for the menus; Phaser for the match. Deployed to Cloudflare Workers as static assets.
 
 ## Commands
 
@@ -40,11 +29,10 @@ If you connect the repo through Cloudflare's dashboard (Workers Builds), use `np
 
 ## Where things live
 
-- `src/game/config.ts`: every tunable number, plus positions, roles, formations and styles
-- `src/game/dice.ts`: dice rolling, double one/six, and mirroring a roll to the defender's side
-- `src/game/squad.ts`: generating players and teams
-- `src/game/match.ts`: the simulation, contests and your decisions
-- `src/grid/`: the grid tactics engine and screen
-- `src/live/`: the Phaser live-moment scene
-- `src/components/TimingMeter.tsx`: the mini-game timing bar
-- `src/components/`: the UI
+- `src/pitch/sim.ts`: the match itself: physics, AI, rules. No drawing, so it can be run headless.
+- `src/pitch/art.ts`: all the artwork as SVG, authored at native world scale.
+- `src/pitch/PitchScene.ts`: the Phaser scene that draws the simulation.
+- `src/pitch/PitchMatch.tsx`, `Controls.tsx`: the full-screen match, scoreboard, joystick and buttons.
+- `src/pitch/constants.ts`: pitch size, speeds, timings and tuning numbers.
+- `src/game/config.ts`: stats, positions, roles, formations and styles.
+- `src/game/squad.ts`: generating players and teams.
