@@ -22,7 +22,7 @@ import {
   ZONE_LABELS,
   goalZoneSide,
 } from "./config";
-import { check, meets, mirror, passed, type Rng } from "./dice";
+import { chanceToMeet, check, diceForQuantile, meets, mirror, passed, takeQuantile, type Rng } from "./dice";
 import type {
   Action,
   BallAction,
@@ -189,9 +189,11 @@ function contest(
   rng: Rng,
   mirrorThreshold?: number,
 ): Contest {
-  const result = check(who(attacker), [opposedModifier(state, attacker, aStats, defender, dStats), ...extra], target, rng);
-  const ok = passed(result);
   const userInvolved = attacker.isUser || defender.isUser;
+  const quantile = userInvolved ? takeQuantile() : null;
+  const forced = quantile === null ? undefined : diceForQuantile(attacker.isUser ? quantile : 1 - quantile);
+  const result = check(who(attacker), [opposedModifier(state, attacker, aStats, defender, dStats), ...extra], target, rng, forced);
+  const ok = passed(result);
   const userWon = attacker.isUser ? ok : !ok;
   const shown = defender.isUser ? mirror(result, "You", mirrorThreshold) : result;
   let next = state;
@@ -895,6 +897,93 @@ export function resolve(state: MatchState, action: Action, rng: Rng = Math.rando
       const attacker = find(state, situation.attackerId);
       const goalZone = situation.attackerPlan === "shoot" ? aiGoalZone(rng) : null;
       return resolveOneOnOne(clear, attacker, me, situation.attackerPlan, action.kind, goalZone, rng);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Live moments: a short passage of play the user steers. The scene handles movement;
+// every tackle, interception and shot still comes from the same stars.
+// ---------------------------------------------------------------------------
+
+export interface LiveCast {
+  carrier: Footballer;
+  mates: Footballer[];
+  defenders: Footballer[];
+  keeper: Footballer;
+  zone: Zone;
+  oneOnOne: boolean;
+}
+
+export type LiveOutcome =
+  | { kind: "lost"; byId: string }
+  | { kind: "kept"; carrierId: string; zone: Zone }
+  | { kind: "shot"; shooterId: string; zone: Zone; goalZone: GoalZone }
+  | { kind: "wide"; shooterId: string };
+
+/** Whether a situation should be played live rather than chosen from buttons. */
+export function isLiveSituation(state: MatchState, situation: Situation): boolean {
+  if (situation.kind === "oneOnOne") return true;
+  return situation.kind === "onBall" && situation.zone !== "defence" && find(state, state.userId).position !== "GK";
+}
+
+export function liveCast(state: MatchState, rng: Rng = Math.random): LiveCast {
+  const me = find(state, state.userId);
+  const situation = state.situation;
+  const zone: Zone = situation?.kind === "onBall" ? situation.zone : "box";
+  const pickSome = (players: Footballer[], weight: (p: Footballer) => number, n: number) => {
+    const pool = [...players];
+    const out: Footballer[] = [];
+    while (out.length < n && pool.length) {
+      const p = pickWeighted(pool, weight, rng);
+      out.push(p);
+      pool.splice(pool.indexOf(p), 1);
+    }
+    return out;
+  };
+  const mates = pickSome(
+    state.sides[me.team].players.filter((p) => !p.isUser && p.position !== "GK"),
+    (p) => presence(state, p, "attack") + presence(state, p, "box") + 0.1,
+    3,
+  );
+  const defenders = pickSome(
+    state.sides[other(me.team)].players.filter((p) => p.position !== "GK"),
+    (p) => presence(state, p, "defence") + 0.1,
+    4,
+  );
+  return { carrier: me, mates, defenders, keeper: keeperOf(state, other(me.team)), zone, oneOnOne: situation?.kind === "oneOnOne" };
+}
+
+/** Odds the attacker wins a contest, from exactly the same stars and target numbers as the dice. */
+export function liveChance(state: MatchState, attacker: Footballer, aStats: Stat[], defender: Footballer, dStats: Stat[], target: number) {
+  return chanceToMeet(opposedModifier(state, attacker, aStats, defender, dStats).value, target);
+}
+
+export function resolveLive(state: MatchState, outcome: LiveOutcome, rng: Rng = Math.random): MatchState {
+  const me = find(state, state.userId);
+  const clear: MatchState = { ...state, situation: null, lastInvolved: state.minute };
+  const zone = state.situation?.kind === "onBall" ? state.situation.zone : "box";
+  switch (outcome.kind) {
+    case "lost": {
+      const by = find(state, outcome.byId);
+      return log(giveBall(clear, by.team, by.id, MIRROR_ZONE[zone]), `${by.name} wins the ball. Move over.`, "bad");
+    }
+    case "kept": {
+      // The moment's over; if you've still got it, you lay it off so the match can carry on without you.
+      const carrier = outcome.carrierId === me.id ? pickReceiver(clear, me.team, outcome.zone, me.id, rng) : find(state, outcome.carrierId);
+      const text = outcome.carrierId === me.id
+        ? `You lay it off to ${carrier.name} in ${ZONE_LABELS[outcome.zone]}.`
+        : `${carrier.name} has it in ${ZONE_LABELS[outcome.zone]}.`;
+      return log(giveBall(clear, me.team, carrier.id, outcome.zone), text, "good");
+    }
+    case "shot": {
+      const shooter = find(state, outcome.shooterId);
+      return shootAt(clear, shooter, keeperOf(state, other(me.team)), outcome.goalZone, outcome.zone, aiDive(rng), rng);
+    }
+    case "wide": {
+      const shooter = find(state, outcome.shooterId);
+      const next = goalKick({ ...clear, shots: { ...clear.shots, [me.team]: clear.shots[me.team] + 1 } }, other(me.team), rng);
+      return log(next, `${who(shooter)} ${shooter.isUser ? "drag" : "drags"} it wide.`, "bad");
     }
   }
 }

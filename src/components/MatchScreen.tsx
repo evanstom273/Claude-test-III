@@ -2,9 +2,14 @@ import { POSITIONS, ROLES, STYLES } from "../game/config";
 import { findPlayer } from "../game/match";
 import type { LogEntry, Side, Team } from "../game/types";
 import { useMatch } from "../game/useMatch";
-import DecisionPanel from "./DecisionPanel";
+import { lazy, Suspense } from "react";
+import { isLiveSituation } from "../game/match";
+import DecisionPanel, { type MomentMode } from "./DecisionPanel";
 import Lineups from "./Lineups";
 import RollDisplay from "./RollDisplay";
+
+// Phaser is big, so it only loads for the live-moments version.
+const LiveMoment = lazy(() => import("../live/LiveMoment"));
 
 const TONE: Record<LogEntry["tone"], string> = {
   neutral: "text-slate-300",
@@ -16,12 +21,13 @@ const TONE: Record<LogEntry["tone"], string> = {
 
 interface Props {
   sides: Record<Team, Side>;
+  mode: MomentMode;
   onReplay: () => void;
   onQuit: () => void;
 }
 
-export default function MatchScreen({ sides, onReplay, onQuit }: Props) {
-  const { state, play, pause, act } = useMatch(sides);
+export default function MatchScreen({ sides, mode, onReplay, onQuit }: Props) {
+  const { state, play, pause, act, finishLive } = useMatch(sides);
   const me = findPlayer(state, state.userId);
   const newestFirst = [...state.log].reverse();
 
@@ -45,8 +51,12 @@ export default function MatchScreen({ sides, onReplay, onQuit }: Props) {
         </div>
       </header>
 
-      {state.situation ? (
-        <DecisionPanel state={state} situation={state.situation} onAct={act} />
+      {state.situation && mode === "live" && isLiveSituation(state, state.situation) ? (
+        <Suspense fallback={<div className="rounded-xl bg-slate-900 p-4 text-slate-400">Loading…</div>}>
+          <LiveMoment key={state.nextLogId} state={state} onDone={finishLive} />
+        </Suspense>
+      ) : state.situation ? (
+        <DecisionPanel key={state.nextLogId} state={state} situation={state.situation} mode={mode} onAct={act} />
       ) : state.finished ? (
         <div className="rounded-xl bg-slate-900 p-4">
           <div className="text-lg font-semibold">Full time</div>

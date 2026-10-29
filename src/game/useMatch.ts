@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TICK_MS } from "./config";
-import { resolve, startMatch, tick } from "./match";
+import { withSkill } from "./dice";
+import { resolve, resolveLive, startMatch, tick, type LiveOutcome } from "./match";
 import type { Action, Side, Team } from "./types";
 
 export function useMatch(sides: Record<Team, Side>) {
@@ -14,7 +15,13 @@ export function useMatch(sides: Record<Team, Side>) {
 
   const play = useCallback(() => setState((s) => (s.finished || s.situation ? s : { ...s, running: true })), []);
   const pause = useCallback(() => setState((s) => ({ ...s, running: false })), []);
-  const act = useCallback((action: Action) => setState((s) => resolve(s, action)), []);
+  /** With a skill result, the user's next roll comes from their timing instead of the dice. */
+  const act = useCallback(
+    (action: Action, skill?: number) =>
+      setState((s) => (skill === undefined ? resolve(s, action) : withSkill(skill, () => resolve(s, action)))),
+    [],
+  );
+  const finishLive = useCallback((outcome: LiveOutcome) => setState((s) => resolveLive(s, outcome)), []);
 
-  return { state, play, pause, act };
+  return { state, play, pause, act, finishLive };
 }

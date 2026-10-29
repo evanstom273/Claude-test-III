@@ -10,11 +10,21 @@ A football game where you play as one player in a fully simulated match. Every p
 - Double one always fails, double six always succeeds.
 - The attacker rolls. When you're defending you see the same roll from your side, with identical odds.
 
-Early mock-up. Every number is a placeholder.
+Early prototype. Every number is a placeholder.
+
+## Prototypes
+
+The home screen offers three ways of playing your moments, all on the same squads, stars, formations and styles:
+
+- **Grid tactics:** a top-down pitch of squares. Each turn (30 seconds) you move up to three of your players one square; the AI moves the rest, then the ball is passed, tackled for or shot. Contests still use stars and dice.
+- **Mini-games:** the simulated match, but your rolls come from stopping a timing bar. Random timing gives exactly the dice odds.
+- **Live moments:** the simulated match, but when you're on the ball going forward you play a short live passage in Phaser: hold to run, flick to pass or shoot. Tackles, interceptions and shots use the same star odds.
+
+The original dice version is still there to compare against.
 
 ## Stack
 
-React, Vite, TypeScript and Tailwind CSS, deployed to Cloudflare Workers as static assets. Phaser is installed but not used yet.
+React, Vite, TypeScript and Tailwind CSS, deployed to Cloudflare Workers as static assets. Phaser runs the live moments.
 
 ## Commands
 
@@ -34,4 +44,7 @@ If you connect the repo through Cloudflare's dashboard (Workers Builds), use `np
 - `src/game/dice.ts`: dice rolling, double one/six, and mirroring a roll to the defender's side
 - `src/game/squad.ts`: generating players and teams
 - `src/game/match.ts`: the simulation, contests and your decisions
+- `src/grid/`: the grid tactics engine and screen
+- `src/live/`: the Phaser live-moment scene
+- `src/components/TimingMeter.tsx`: the mini-game timing bar
 - `src/components/`: the UI
