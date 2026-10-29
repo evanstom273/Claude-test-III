@@ -1,16 +1,65 @@
+import { useState } from "react";
 import { SHOT_ZONES } from "../game/config";
 import { choices, describe, shotNeeds } from "../game/match";
 import type { Action, GoalZone, MatchState, Situation } from "../game/types";
+import TimingMeter from "./TimingMeter";
+
+export type MomentMode = "dice" | "skill" | "live";
+
+/** Choices that don't involve a contest straight away, so there's nothing to time. */
+function needsNoTiming(action: Action): boolean {
+  return (action.kind === "ball" && action.action === "shoot") || action.kind === "holdPosition";
+}
+
+const PROMPTS: Partial<Record<Action["kind"], string>> = {
+  shootAt: "Strike it! Stop the bar in the middle.",
+  dive: "React! Stop the bar in the middle.",
+  tackle: "Time the tackle.",
+  header: "Time your jump.",
+};
+
+function promptFor(action: Action): string {
+  if (action.kind === "ball") return action.action === "dribble" ? "Time your touch." : "Weight the ball.";
+  return PROMPTS[action.kind] ?? "Time it.";
+}
+
+function periodFor(action: Action): number {
+  if (action.kind === "dive") return 750;
+  if (action.kind === "shootAt" || action.kind === "roundKeeper") return 950;
+  if (action.kind === "ball" && action.action === "dribble") return 1000;
+  return 1200;
+}
 
 const GOAL_GRID: GoalZone[] = ["topLeft", "topCentre", "topRight", "bottomLeft", "bottomCentre", "bottomRight"];
 
 interface Props {
   state: MatchState;
   situation: Situation;
-  onAct: (a: Action) => void;
+  mode: MomentMode;
+  onAct: (a: Action, skill?: number) => void;
 }
 
-export default function DecisionPanel({ state, situation, onAct }: Props) {
+export default function DecisionPanel({ state, situation, mode, onAct: act }: Props) {
+  const [timing, setTiming] = useState<Action | null>(null);
+  const onAct = (a: Action) => (mode === "skill" && !needsNoTiming(a) ? setTiming(a) : act(a));
+
+  if (timing) {
+    return (
+      <div className="rounded-xl border-2 border-amber-400/70 bg-slate-900 p-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Clock stopped — your call</div>
+        <TimingMeter
+          key={state.nextLogId}
+          prompt={promptFor(timing)}
+          periodMs={periodFor(timing)}
+          onDone={(q) => {
+            setTiming(null);
+            act(timing, q);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border-2 border-amber-400/70 bg-slate-900 p-4">
       <div className="text-xs font-semibold uppercase tracking-wide text-amber-300">Clock stopped — your call</div>
@@ -34,7 +83,11 @@ export default function DecisionPanel({ state, situation, onAct }: Props) {
           ))}
         </div>
       )}
-      <p className="mt-3 text-xs text-slate-500">"Needs" is what the two dice have to show once both players' stars are counted.</p>
+      <p className="mt-3 text-xs text-slate-500">
+        {mode === "skill"
+          ? "Your timing replaces the dice. \"Needs\" is still the roll your timing has to be worth."
+          : "\"Needs\" is what the two dice have to show once both players' stars are counted."}
+      </p>
     </div>
   );
 }

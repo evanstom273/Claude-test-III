@@ -13,7 +13,7 @@ function randomOf<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-export default function Setup({ onStart }: { onStart: (sides: Record<Team, Side>) => void }) {
+export default function Setup({ onStart, onBack }: { onStart: (sides: Record<Team, Side>) => void; onBack: () => void }) {
   const [formation, setFormation] = useState<FormationId>("4-3-3");
   const [style, setStyle] = useState<StyleId>("balanced");
   const [slot, setSlot] = useState(10);
@@ -48,7 +48,10 @@ export default function Setup({ onStart }: { onStart: (sides: Record<Team, Side>
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold">Football Dice</h1>
+        <button onClick={onBack} className="mb-2 text-sm text-slate-400 hover:text-slate-200">
+          ← Back
+        </button>
+        <h1 className="text-3xl font-bold">Set up</h1>
         <p className="mt-1 text-slate-400">Pick your team's shape and style, then who you are in it.</p>
       </div>
 

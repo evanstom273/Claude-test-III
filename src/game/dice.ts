@@ -10,9 +10,57 @@ export function roll2d6(rng: Rng = Math.random): [number, number] {
   return [rollDie(6, rng), rollDie(6, rng)];
 }
 
+/** All 36 ways two dice can land, lowest total first. */
+const PAIRS: [number, number][] = [];
+for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) PAIRS.push([a, b]);
+PAIRS.sort((x, y) => x[0] + x[1] - (y[0] + y[1]));
+
+/**
+ * Dice for a given quantile (0 = worst possible roll, 1 = best). A uniformly random quantile gives
+ * exactly the same odds as rolling, which is what lets a skill mini-game stand in for the dice fairly.
+ */
+export function diceForQuantile(u: number): [number, number] {
+  return PAIRS[Math.min(35, Math.max(0, Math.floor(u * 36)))];
+}
+
+/** Chance that 2d6 + modifier meets a target, counting double one and double six. */
+export function chanceToMeet(modifier: number, target: number): number {
+  let hits = 0;
+  for (const [a, b] of PAIRS) {
+    if (a === 6 && b === 6) hits++;
+    else if (!(a === 1 && b === 1) && a + b + modifier >= target) hits++;
+  }
+  return hits / 36;
+}
+
+let pendingQuantile: number | null = null;
+
+/** Run something with the user's next roll decided by a skill result instead of luck. */
+export function withSkill<T>(quantile: number, fn: () => T): T {
+  pendingQuantile = quantile;
+  try {
+    return fn();
+  } finally {
+    pendingQuantile = null;
+  }
+}
+
+/** Take the pending skill result, if there is one. Only the first roll that involves the user uses it. */
+export function takeQuantile(): number | null {
+  const q = pendingQuantile;
+  pendingQuantile = null;
+  return q;
+}
+
 /** Roll 2d6, add every modifier, compare against the target. Double one and double six are automatic. */
-export function check(roller: string, modifiers: Modifier[], target: number, rng: Rng = Math.random): CheckResult {
-  const dice = roll2d6(rng);
+export function check(
+  roller: string,
+  modifiers: Modifier[],
+  target: number,
+  rng: Rng = Math.random,
+  forced?: [number, number],
+): CheckResult {
+  const dice = forced ?? roll2d6(rng);
   const applied = modifiers.filter((m) => m.value !== 0);
   const total = dice[0] + dice[1] + applied.reduce((sum, m) => sum + m.value, 0);
   const crit = dice[0] === 6 && dice[1] === 6 ? "success" : dice[0] === 1 && dice[1] === 1 ? "fail" : null;
